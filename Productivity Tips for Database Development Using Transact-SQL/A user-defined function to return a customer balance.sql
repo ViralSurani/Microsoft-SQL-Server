@@ -1,17 +1,25 @@
+ALTER FUNCTION dbo.GetCustomerBalance (@iAccKey int, @dCompDate datetime)
+RETURNS decimal
+AS
+BEGIN
 
+  DECLARE @nCreditAmount decimal
+  DECLARE @nDebitAmount decimal
 
-ALTER function GetCustomerBalance(@iAccKey int, @dCompDate datetime)
-returns decimal as
-begin
+  SET @nCreditAmount = (SELECT
+    SUM(Amount)
+  FROM Credits
+  WHERE AcctKey = @iAccKey
+  AND ([dbo].[GetDate]([Status], DrDate, WIPDate, CompDate)) <= @dCompDate)
 
-declare @Credits table(AcctKey int, Amount decimal, CompDate datetime)
-declare @Debits table(AcctKey int, Amount decimal, CompDate datetime)
+  SET @nDebitAmount = (SELECT
+    SUM(Amount)
+  FROM Debits
+  WHERE AcctKey = @iAccKey
+  AND ([dbo].[GetDate]([Status], DrDate, WIPDate, CompDate)) <= @dCompDate)
 
-INSERT INTO @Credits VALUES(1,1000,CAST('21-01-2017' AS DATETIME))
-INSERT INTO @Credits VALUES(1,2000,CAST('20-01-2017' AS DATETIME))
-INSERT INTO @Credits VALUES(1,3000,CAST('19-01-2017' AS DATETIME))
+  RETURN (ISNULL(@nCreditAmount, 0) - ISNULL(@nDebitAmount, 0))
 
-return 0
-end
+END
 
-SELECT dbo.GetCustomerBalance(1,CAST('21-01-2017' AS DATETIME))
+--SELECT dbo.GetCustomerBalance(1,GETDATE())
